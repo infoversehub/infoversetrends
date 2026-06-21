@@ -4,54 +4,82 @@ import feedparser
 TOKEN = "8763023216:AAGTxJFJD2dnMtBHirSdx_fMhpyszuOkmS0"
 CHAT_ID = "7330431242"
 
-feeds_ar = [
-    "https://www.tech-wd.com/wd/feed/",
-    "https://aitnews.com/feed/",
-    "https://www.arageek.com/feed"
-]
+feeds = {
+    "🤖 الذكاء الاصطناعي": [
+        "https://aitnews.com/feed/",
+        "https://techcrunch.com/category/artificial-intelligence/feed/",
+    ],
 
-feeds_en = [
-    "https://techcrunch.com/feed/",
-    "https://www.theverge.com/rss/index.xml",
-    "https://feeds.feedburner.com/venturebeat/SZYF",
-    "https://www.ign.com/rss",
-    "https://www.businessinsider.com/rss"
-]
+    "📱 التقنية والجوالات والسيارات": [
+        "https://www.unlimit-tech.com/feed/",
+        "https://www.theverge.com/rss/index.xml",
+        "https://www.androidauthority.com/feed/",
+    ],
+
+    "💰 المال والاستثمار والذهب": [
+        "https://www.investing.com/rss/news.rss",
+        "https://www.kitco.com/rss/news",
+        "https://feeds.feedburner.com/entrepreneur/latest",
+    ],
+
+    "✈️ السفر والهجرة والتأشيرات": [
+        "https://www.travelandleisure.com/rss",
+        "https://www.lonelyplanet.com/news/rss",
+    ],
+
+    "🎓 التعليم والمهارات": [
+        "https://www.edutopia.org/rss.xml",
+        "https://www.coursera.org/articles/rss",
+    ],
+
+    "🤖 AI": [
+        "https://techcrunch.com/category/artificial-intelligence/feed/",
+        "https://venturebeat.com/category/ai/feed/",
+    ],
+
+    "📱 Technology": [
+        "https://www.theverge.com/rss/index.xml",
+        "https://techcrunch.com/feed/",
+    ],
+
+    "💰 Finance": [
+        "https://www.investing.com/rss/news.rss",
+        "https://feeds.feedburner.com/entrepreneur/latest",
+    ],
+
+    "🎮 Gaming": [
+        "https://www.ign.com/rss",
+        "https://feeds.feedburner.com/Kotaku",
+    ],
+
+    "🚗 Automotive": [
+        "https://www.motortrend.com/feed/",
+        "https://www.autoblog.com/rss.xml",
+    ]
+}
 
 message = "🔥 مواضيع اليوم للمقالات\n\n"
 
-# عربي
-message += "🇸🇦 5 مواضيع عربية:\n\n"
+count = 1
 
-arab_topics = []
-for feed_url in feeds_ar:
-    try:
-        feed = feedparser.parse(feed_url)
-        for item in feed.entries[:5]:
-            title = item.title.strip()
-            if title not in arab_topics:
-                arab_topics.append(title)
-    except:
-        pass
+for category, urls in feeds.items():
 
-for i, topic in enumerate(arab_topics[:5], 1):
-    message += f"{i}- {topic}\n"
+    title_found = None
 
-message += "\n🌍 5 مواضيع إنجليزية:\n\n"
+    for url in urls:
+        try:
+            feed = feedparser.parse(url)
 
-eng_topics = []
-for feed_url in feeds_en:
-    try:
-        feed = feedparser.parse(feed_url)
-        for item in feed.entries[:10]:
-            title = item.title.strip()
-            if title not in eng_topics:
-                eng_topics.append(title)
-    except:
-        pass
+            if len(feed.entries) > 0:
+                title_found = feed.entries[0].title
+                break
 
-for i, topic in enumerate(eng_topics[:5], 1):
-    message += f"{i}- {topic}\n"
+        except:
+            pass
+
+    if title_found:
+        message += f"{count}- {category}\n{title_found}\n\n"
+        count += 1
 
 requests.post(
     f"https://api.telegram.org/bot{TOKEN}/sendMessage",
