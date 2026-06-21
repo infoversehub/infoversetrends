@@ -2,3 +2,11 @@ name: Daily Trends
 
 on:
   workflow_dispatch:
+
+jobs:
+  trends:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Test
+        run: echo "Trends Bot Ready"
