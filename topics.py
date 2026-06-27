@@ -235,19 +235,19 @@ def get_best_topic(category_name, feeds, used_topics):
             "score": 0
         }
 
-    best = filtered[0]
+        best = filtered[0]
 
-candidates = []
+    candidates = []
 
-for item in filtered[:5]:
-    candidates.append({
-        "title": item["title"],
-        "summary": item["summary"],
-        "link": item["link"],
-        "published": item["published"],
-        "source": item["source"],
-        "score": item["score"]
-    })
+    for item in filtered[:5]:
+        candidates.append({
+            "title": item["title"],
+            "summary": item["summary"],
+            "link": item["link"],
+            "published": item["published"],
+            "source": item["source"],
+            "score": item["score"]
+        })
 
     return {
         "category": category_name,
@@ -257,7 +257,7 @@ for item in filtered[:5]:
         "published": best["published"],
         "source": best["source"],
         "score": best["score"],
-      "candidates": candidates
+        "candidates": candidates
     }
 
 
