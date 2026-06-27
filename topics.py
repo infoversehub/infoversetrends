@@ -337,9 +337,9 @@ def build_today_topics():
 
         topics.append(topic)
 
-        used_topics.append(
-            topic["title"]
-        )
+        # لا نحفظ الرسائل الوهمية
+        if topic["title"] != "لا يوجد موضوع مناسب اليوم":
+            used_topics.append(topic["title"])
 
         number += 1
 
@@ -357,17 +357,15 @@ def build_today_topics():
 
         topics.append(topic)
 
-        used_topics.append(
-            topic["title"]
-        )
+        if topic["title"] != "لا يوجد موضوع مناسب اليوم":
+            used_topics.append(topic["title"])
 
         number += 1
 
-    save_used_topics(
-        used_topics
-    )
+    save_used_topics(used_topics)
 
     data = {
+        "date": "",
         "today": topics,
         "history": topics
     }
