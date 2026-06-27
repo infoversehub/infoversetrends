@@ -270,10 +270,7 @@ def get_best_topic(category_name, feeds, used_topics, language):
 
     # جمع الأخبار من جميع المصادر
     for feed in feeds:
-
-        all_news.extend(
-            fetch_feed(feed)
-        )
+        all_news.extend(fetch_feed(feed))
 
     # فلترة الأخبار
     filtered = filter_news(
@@ -282,12 +279,11 @@ def get_best_topic(category_name, feeds, used_topics, language):
         language
     )
 
-    # لا يوجد خبر مناسب
     if not filtered:
 
         return {
             "category": category_name,
-            "title": "لم يتم العثور على موضوع مناسب",
+            "title": "لا يوجد موضوع مناسب اليوم",
             "summary": "",
             "link": "",
             "published": "",
@@ -297,7 +293,11 @@ def get_best_topic(category_name, feeds, used_topics, language):
             "language": language
         }
 
-    best = filtered[0]
+    # أخذ أفضل 5 أخبار
+    top_news = filtered[:5]
+
+    # اختيار أعلى Score
+    best = max(top_news, key=lambda x: x["score"])
 
     return {
         "category": category_name,
@@ -310,7 +310,6 @@ def get_best_topic(category_name, feeds, used_topics, language):
         "number": 0,
         "language": language
     }
-
 
 # ==========================================
 # BUILD TODAY TOPICS
