@@ -3,3 +3,4 @@ feedparser
 schedule
 google-generativeai==0.8.5
 python-telegram-bot==21.11.1
+APScheduler
