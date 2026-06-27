@@ -25,6 +25,10 @@ from topics import (
     generate_daily_topics,
 )
 
+from gemini import (
+    create_article,
+)
+
 # ==========================================
 # CREATE APPLICATION
 # ==========================================
@@ -40,11 +44,14 @@ application = (
 # ==========================================
 
 TODAY_TOPICS = []
+LAST_ARTICLE = None
 # ==========================================
 # SEND DAILY TOPICS
 # ==========================================
 
-async def send_daily_topics(context: ContextTypes.DEFAULT_TYPE):
+async def send_daily_topics(
+    context: ContextTypes.DEFAULT_TYPE
+):
 
     global TODAY_TOPICS
 
@@ -69,7 +76,7 @@ async def start_command(
 
     await update.message.reply_text(
         "🤖 InfoVerse Hub\n\n"
-        "أرسل رقمًا من 1 إلى 11 لاختيار موضوع اليوم."
+        "أرسل رقم الموضوع لبدء كتابة المقال."
     )
 
 
@@ -77,22 +84,24 @@ async def start_command(
 # STARTUP
 # ==========================================
 
-async def post_init(application: Application):
+async def post_init(
+    application: Application
+):
 
-    # إرسال المواضيع عند أول تشغيل
     await application.bot.send_message(
         chat_id=CHAT_ID,
         text="🚀 Bot Started\n⏳ جاري جلب مواضيع اليوم..."
     )
 
-    # تشغيل الجدولة اليومية
     application.job_queue.run_daily(
         send_daily_topics,
-        time=time(hour=0, minute=0),
+        time=time(
+            hour=0,
+            minute=0
+        ),
         name="daily_topics"
     )
 
-    # إرسال المواضيع مباشرة لأول تشغيل
     await send_daily_topics(
         type(
             "StartupContext",
@@ -113,23 +122,20 @@ async def receive_message(
     context: ContextTypes.DEFAULT_TYPE
 ):
 
+    global LAST_ARTICLE
+
     if update.message is None:
         return
 
     text = update.message.text.strip()
 
-    # اختيار موضوع
+    # ==========================
+    # SELECT TOPIC
+    # ==========================
+
     if text.isdigit():
 
         number = int(text)
-
-        if number < 1 or number > 11:
-
-            await update.message.reply_text(
-                "❌ اختر رقمًا من 1 إلى 11."
-            )
-
-            return
 
         data = load_json(
             "topics.json",
@@ -138,7 +144,10 @@ async def receive_message(
             }
         )
 
-        topics = data.get("today", [])
+        topics = data.get(
+            "today",
+            []
+        )
 
         selected = None
 
@@ -162,44 +171,120 @@ async def receive_message(
         )
 
         await update.message.reply_text(
-            f"✅ تم اختيار:\n\n{selected['title']}\n\n"
-            "⏳ جاري تحليل المصادر...\n"
-            "⏳ جاري كتابة المقال..."
+            "⏳ جاري كتابة المقال...\n"
+            "قد يستغرق ذلك دقيقة أو دقيقتين."
         )
 
-        # المرحلة القادمة:
-        # article = await gemini.generate_article(selected)
-
-        return
-
-    # أوامر المراحل القادمة
-
-    if text.lower() == "انشر":
-
-        await update.message.reply_text(
-            "🚧 سيتم تفعيل النشر بعد ربط GitHub."
+        result = create_article(
+            selected
         )
 
-        return
+        if not result["success"]:
 
-    if text.lower().startswith("عدل"):
+            await update.message.reply_text(
+                "❌ فشل إنشاء المقال."
+            )
+
+            return
+
+        article = result["data"]
+
+        LAST_ARTICLE = article
 
         await update.message.reply_text(
-            "🚧 سيتم تفعيل التعديل بعد ربط Gemini."
-        )
+    f"✅ تم إنشاء المقال.\n\n"
+    f"📌 {article['title']}\n\n"
+    f"📝 {article['meta_description']}"
+)
+
+article_text = article["article"]
+
+MAX_LENGTH = 3500
+
+for i in range(0, len(article_text), MAX_LENGTH):
+
+    part = article_text[i:i + MAX_LENGTH]
+
+    await update.message.reply_text(part)
+
+await update.message.reply_text(
+    "━━━━━━━━━━━━━━━━━━\n\n"
+    "✅ انتهى إرسال المقال.\n\n"
+    "اكتب:\n"
+    "📤 انشر\n"
+    "✏️ عدل"
+)
+
 
         return
+        # ==========================================
+# FUTURE COMMANDS
+# ==========================================
 
-    if text.lower() == "ارجع للمقال الاول":
+async def publish_command(
+    update: Update,
+    context: ContextTypes.DEFAULT_TYPE
+):
+
+    global LAST_ARTICLE
+
+    if LAST_ARTICLE is None:
 
         await update.message.reply_text(
-            "🚧 سيتم تفعيل الإصدارات بعد ربط Gemini."
+            "❌ لا يوجد مقال للنشر."
         )
 
         return
 
     await update.message.reply_text(
-        "❌ أرسل رقمًا من 1 إلى 11."
+        "🚧 سيتم ربط النشر مع GitHub في المرحلة القادمة."
+    )
+
+
+async def edit_command(
+    update: Update,
+    context: ContextTypes.DEFAULT_TYPE
+):
+
+    global LAST_ARTICLE
+
+    if LAST_ARTICLE is None:
+
+        await update.message.reply_text(
+            "❌ لا يوجد مقال لتعديله."
+        )
+
+        return
+
+    await update.message.reply_text(
+        "🚧 سيتم ربط التعديل مع Gemini في المرحلة القادمة."
+    )
+
+
+# ==========================================
+# TEXT COMMANDS
+# ==========================================
+
+    if text.lower() == "انشر":
+
+        await publish_command(
+            update,
+            context
+        )
+
+        return
+
+    if text.lower() == "عدل":
+
+        await edit_command(
+            update,
+            context
+        )
+
+        return
+
+    await update.message.reply_text(
+        "❌ أرسل رقم الموضوع."
     )
 
 
@@ -220,6 +305,8 @@ application.add_handler(
         receive_message
     )
 )
+
+
 # ==========================================
 # MAIN
 # ==========================================
