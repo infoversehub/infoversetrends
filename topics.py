@@ -211,20 +211,24 @@ def filter_news(news, used_topics):
 # SELECT BEST NEWS
 # ==========================================
 
+# ==========================================
+# SELECT BEST NEWS
+# ==========================================
+
 def get_best_topic(category_name, feeds, used_topics):
 
     all_news = []
 
+    # جمع الأخبار من جميع المصادر
     for feed in feeds:
-
         news = fetch_feed(feed)
-
         all_news.extend(news)
 
+    # تنظيف وترتيب الأخبار
     filtered = filter_news(all_news, used_topics)
 
-    if len(filtered) == 0:
-
+    # إذا لم يوجد أي خبر مناسب
+    if not filtered:
         return {
             "category": category_name,
             "title": "لم يتم العثور على موضوع مناسب",
@@ -232,36 +236,36 @@ def get_best_topic(category_name, feeds, used_topics):
             "link": "",
             "published": "",
             "source": "",
-            "score": 0
+            "score": 0,
+            "candidates": []
         }
 
-        candidates = filtered[:5]
+    # أفضل خبر
+    best = filtered[0]
 
-if not candidates:
+    # أفضل 5 أخبار
+    candidates = []
+
+    for item in filtered[:5]:
+        candidates.append({
+            "title": item.get("title", ""),
+            "summary": item.get("summary", ""),
+            "link": item.get("link", ""),
+            "published": item.get("published", ""),
+            "source": item.get("source", ""),
+            "score": item.get("score", 0)
+        })
+
     return {
         "category": category_name,
-        "title": "لم يتم العثور على موضوع مناسب",
-        "summary": "",
-        "link": "",
-        "published": "",
-        "source": "",
-        "score": 0,
-        "candidates": []
+        "title": best.get("title", ""),
+        "summary": best.get("summary", ""),
+        "link": best.get("link", ""),
+        "published": best.get("published", ""),
+        "source": best.get("source", ""),
+        "score": best.get("score", 0),
+        "candidates": candidates
     }
-
-best = candidates[0]
-
-return {
-    "category": category_name,
-    "title": best["title"],
-    "summary": best["summary"],
-    "link": best["link"],
-    "published": best["published"],
-    "source": best["source"],
-    "score": best["score"],
-    "candidates": candidates
-}
-
 
 # ==========================================
 # BUILD TODAY TOPICS
