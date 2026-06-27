@@ -1,12 +1,10 @@
-import asyncio
-import threading
-import schedule
-import time
+from datetime import time
 
-from telegram import Bot, Update
+from telegram import Update
 from telegram.ext import (
     Application,
     ApplicationBuilder,
+    CommandHandler,
     ContextTypes,
     MessageHandler,
     filters,
@@ -16,7 +14,6 @@ from config import (
     BOT_TOKEN,
     CHAT_ID,
     CURRENT_TOPIC_FILE,
-    DAILY_SEND_TIME,
 )
 
 from storage import (
@@ -28,73 +25,87 @@ from topics import (
     generate_daily_topics,
 )
 
-
 # ==========================================
-# TELEGRAM BOT
+# CREATE APPLICATION
 # ==========================================
-
-bot = Bot(token=BOT_TOKEN)
 
 application = (
     ApplicationBuilder()
     .token(BOT_TOKEN)
     .build()
 )
+
+# ==========================================
+# GLOBAL CACHE
+# ==========================================
+
+TODAY_TOPICS = []
 # ==========================================
 # SEND DAILY TOPICS
 # ==========================================
 
-async def send_daily_topics():
+async def send_daily_topics(context: ContextTypes.DEFAULT_TYPE):
 
-    topics, message = generate_daily_topics()
+    global TODAY_TOPICS
 
-    await bot.send_message(
+    TODAY_TOPICS, message = generate_daily_topics()
+
+    await context.bot.send_message(
         chat_id=CHAT_ID,
         text=message
     )
 
     print("✅ Daily topics sent.")
 
-    return topics
+
+# ==========================================
+# START COMMAND
+# ==========================================
+
+async def start_command(
+    update: Update,
+    context: ContextTypes.DEFAULT_TYPE
+):
+
+    await update.message.reply_text(
+        "🤖 InfoVerse Hub\n\n"
+        "أرسل رقمًا من 1 إلى 11 لاختيار موضوع اليوم."
+    )
 
 
 # ==========================================
 # STARTUP
 # ==========================================
 
-async def send_startup_topics():
+async def post_init(application: Application):
 
-    try:
-        await send_daily_topics()
-    except Exception as e:
-        print(f"Startup Error: {e}")
-
-
-# ==========================================
-# SCHEDULER
-# ==========================================
-
-def scheduler_loop():
-
-    schedule.every().day.at(DAILY_SEND_TIME).do(
-        lambda: asyncio.run(send_daily_topics())
+    # إرسال المواضيع عند أول تشغيل
+    await application.bot.send_message(
+        chat_id=CHAT_ID,
+        text="🚀 Bot Started\n⏳ جاري جلب مواضيع اليوم..."
     )
 
-    while True:
-        schedule.run_pending()
-        time.sleep(30)
-
-
-def start_scheduler():
-
-    thread = threading.Thread(
-        target=scheduler_loop,
-        daemon=True
+    # تشغيل الجدولة اليومية
+    application.job_queue.run_daily(
+        send_daily_topics,
+        time=time(hour=0, minute=0),
+        name="daily_topics"
     )
 
-    thread.start()
+    # إرسال المواضيع مباشرة لأول تشغيل
+    await send_daily_topics(
+        type(
+            "StartupContext",
+            (),
+            {
+                "bot": application.bot
+            }
+        )()
+    )
+
+    print("✅ JobQueue Started")
     # ==========================================
-# RECEIVE USER MESSAGES
+# RECEIVE USER MESSAGE
 # ==========================================
 
 async def receive_message(
@@ -107,7 +118,7 @@ async def receive_message(
 
     text = update.message.text.strip()
 
-    # المرحلة الحالية: اختيار الموضوع
+    # اختيار موضوع
     if text.isdigit():
 
         number = int(text)
@@ -115,7 +126,7 @@ async def receive_message(
         if number < 1 or number > 11:
 
             await update.message.reply_text(
-                "❌ أرسل رقمًا من 1 إلى 11."
+                "❌ اختر رقمًا من 1 إلى 11."
             )
 
             return
@@ -129,47 +140,79 @@ async def receive_message(
 
         topics = data.get("today", [])
 
-        selected_topic = None
+        selected = None
 
         for topic in topics:
 
             if topic["number"] == number:
-                selected_topic = topic
+                selected = topic
                 break
 
-        if selected_topic is None:
+        if selected is None:
 
             await update.message.reply_text(
-                "❌ لم يتم العثور على الموضوع."
+                "❌ الموضوع غير موجود."
             )
 
             return
 
         save_json(
             CURRENT_TOPIC_FILE,
-            selected_topic
+            selected
         )
 
         await update.message.reply_text(
-            "✅ تم اختيار الموضوع.\n\n"
+            f"✅ تم اختيار:\n\n{selected['title']}\n\n"
             "⏳ جاري تحليل المصادر...\n"
             "⏳ جاري كتابة المقال..."
         )
 
         # المرحلة القادمة:
-        # article = await generate_article(selected_topic)
+        # article = await gemini.generate_article(selected)
 
         return
 
-    # أوامر مستقبلية
+    # أوامر المراحل القادمة
+
+    if text.lower() == "انشر":
+
+        await update.message.reply_text(
+            "🚧 سيتم تفعيل النشر بعد ربط GitHub."
+        )
+
+        return
+
+    if text.lower().startswith("عدل"):
+
+        await update.message.reply_text(
+            "🚧 سيتم تفعيل التعديل بعد ربط Gemini."
+        )
+
+        return
+
+    if text.lower() == "ارجع للمقال الاول":
+
+        await update.message.reply_text(
+            "🚧 سيتم تفعيل الإصدارات بعد ربط Gemini."
+        )
+
+        return
+
     await update.message.reply_text(
-        "❌ أمر غير معروف."
+        "❌ أرسل رقمًا من 1 إلى 11."
     )
 
 
 # ==========================================
 # HANDLERS
 # ==========================================
+
+application.add_handler(
+    CommandHandler(
+        "start",
+        start_command
+    )
+)
 
 application.add_handler(
     MessageHandler(
@@ -181,29 +224,17 @@ application.add_handler(
 # MAIN
 # ==========================================
 
-async def on_startup():
-
-    print("=" * 50)
-    print("InfoVerse Trends Started")
-    print("=" * 50)
-
-    # إرسال المواضيع عند أول تشغيل (للاختبار)
-    await send_startup_topics()
-
-    # تشغيل الجدولة اليومية
-    start_scheduler()
-
-    print(f"✅ Daily Scheduler: {DAILY_SEND_TIME}")
-    print("✅ Telegram Bot Ready")
-
-
 def main():
 
-    application.post_init = on_startup
+    application.post_init = post_init
+
+    print("=" * 50)
+    print("InfoVerse Hub Started")
+    print("=" * 50)
 
     application.run_polling(
-        drop_pending_updates=True,
-        allowed_updates=Update.ALL_TYPES
+        allowed_updates=Update.ALL_TYPES,
+        drop_pending_updates=True
     )
 
 
