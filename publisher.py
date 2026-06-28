@@ -40,6 +40,10 @@ from github_publish import (
     publish_preview,
 )
 
+from images import (
+    get_images,
+)
+
 # ==========================================
 # CREATE APPLICATION
 # ==========================================
