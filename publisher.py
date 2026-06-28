@@ -351,7 +351,7 @@ async def button_handler(
             "🚀 جاري النشر على GitHub..."
         )
 
-        success = publish_article(
+           success = publish_article(
             LAST_ARTICLE
         )
 
