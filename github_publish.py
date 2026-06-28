@@ -190,3 +190,19 @@ def publish_preview(article):
 # ==========================================
 
 def publish_preview(article):
+    html = build_html(
+        article
+    )
+
+    success = upload_file(
+        path="preview/index.html",
+        content=html,
+        message="Update Preview"
+    )
+        if not success:
+
+        return None
+                return (
+        "https://infoversehub.github.io/"
+        "infoverse-hub/preview/"
+    )
