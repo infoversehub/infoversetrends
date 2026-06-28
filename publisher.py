@@ -347,7 +347,7 @@ async def button_handler(
     
     if query.data == "publish":
 
-    await query.edit_message_text(
+         await query.edit_message_text(
         "🚀 جاري النشر على GitHub..."
     )
 
@@ -374,6 +374,7 @@ async def button_handler(
         )
 
     return
+    
     if query.data == "edit":
 
         await query.edit_message_text(
