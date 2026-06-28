@@ -183,5 +183,5 @@ def publish_preview(article):
 
     return (
         "https://infoversehub.github.io/"
-        "infoverse-hub/preview/"
+"infoversetrends/preview/"
     )
