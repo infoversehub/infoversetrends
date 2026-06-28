@@ -5,12 +5,14 @@ from telegram import (
     InlineKeyboardButton,
     InlineKeyboardMarkup,
 )
+
 from telegram.ext import (
     Application,
     ApplicationBuilder,
     CommandHandler,
     ContextTypes,
     MessageHandler,
+    CallbackQueryHandler,
     filters,
 )
 
@@ -48,7 +50,7 @@ application = (
 )
 
 # ==========================================
-# GLOBAL CACHE
+# GLOBALS
 # ==========================================
 
 TODAY_TOPICS = []
@@ -56,7 +58,7 @@ TODAY_TOPICS = []
 LAST_ARTICLE = None
 
 # ==========================================
-# SEND DAILY TOPICS
+# DAILY TOPICS
 # ==========================================
 
 async def send_daily_topics(
@@ -75,7 +77,7 @@ async def send_daily_topics(
     print("✅ Daily topics sent.")
 
 # ==========================================
-# START COMMAND
+# START
 # ==========================================
 
 async def start_command(
@@ -85,7 +87,7 @@ async def start_command(
 
     await update.message.reply_text(
         "🤖 InfoVerse Hub\n\n"
-        "أرسل رقم الموضوع لبدء كتابة المقال."
+        "أرسل رقم الموضوع."
     )
 
 # ==========================================
@@ -98,7 +100,7 @@ async def post_init(
 
     await application.bot.send_message(
         chat_id=CHAT_ID,
-        text="🚀 Bot Started\n⏳ جاري جلب مواضيع اليوم..."
+        text="🚀 Bot Started\n\n⏳ جاري جلب المواضيع..."
     )
 
     application.job_queue.run_daily(
@@ -120,9 +122,9 @@ async def post_init(
         )()
     )
 
-    print("✅ JobQueue Started")
- # ==========================================
-# RECEIVE USER MESSAGE
+    print("✅ Started")
+    # ==========================================
+# RECEIVE MESSAGE
 # ==========================================
 
 async def receive_message(
@@ -162,13 +164,23 @@ async def receive_message(
         for topic in topics:
 
             if topic["number"] == number:
+
                 selected = topic
+
                 break
 
         if selected is None:
 
             await update.message.reply_text(
                 "❌ الموضوع غير موجود."
+            )
+
+            return
+
+        if selected["title"] == "لا يوجد موضوع مناسب اليوم":
+
+            await update.message.reply_text(
+                "❌ لا يوجد موضوع لهذا الرقم."
             )
 
             return
@@ -180,10 +192,12 @@ async def receive_message(
 
         await update.message.reply_text(
             "⏳ جاري كتابة المقال...\n"
-            "قد يستغرق ذلك دقيقة أو دقيقتين."
+            "قد يستغرق دقيقة..."
         )
 
-        result = create_article(selected)
+        result = create_article(
+            selected
+        )
 
         if not result["success"]:
 
@@ -196,75 +210,47 @@ async def receive_message(
         article = result["data"]
 
         LAST_ARTICLE = article
+                keyboard = InlineKeyboardMarkup(
+            [
+                [
+                    InlineKeyboardButton(
+                        "👀 معاينة المقال",
+                        callback_data="preview"
+                    )
+                ],
+                [
+                    InlineKeyboardButton(
+                        "📝 نشر المقال",
+                        callback_data="publish"
+                    )
+                ],
+                [
+                    InlineKeyboardButton(
+                        "✏️ تعديل المقال",
+                        callback_data="edit"
+                    )
+                ]
+            ]
+        )
 
         await update.message.reply_text(
-            f"✅ تم إنشاء المقال.\n\n"
+            f"✅ تم إنشاء المقال\n\n"
             f"📌 {article['title']}\n\n"
-            f"📝 {article['meta_description']}"
+            f"📝 {article['meta_description']}",
+            reply_markup=keyboard
         )
 
-        article_text = article["article"]
+        return
 
-        MAX_LENGTH = 3500
-
-        for i in range(
-            0,
-            len(article_text),
-            MAX_LENGTH
-        ):
-
-            part = article_text[
-                i:i + MAX_LENGTH
-            ]
-
-            await update.message.reply_text(
-                part
-            )
-
-        keyboard = InlineKeyboardMarkup([
-    [
-        InlineKeyboardButton(
-            "👀 معاينة المقال",
-            callback_data="preview_article"
-        )
-    ],
-    [
-        InlineKeyboardButton(
-            "📝 نشر المقال",
-            callback_data="publish_article"
-        )
-    ],
-    [
-        InlineKeyboardButton(
-            "✏️ تعديل المقال",
-            callback_data="edit_article"
-        )
-    ]
-])
-
-await update.message.reply_text(
-    "✅ تم إنشاء المقال بنجاح.\n\nاختر ما تريد:",
-    reply_markup=keyboard
-)
-
-return
-# ==========================================
-# PUBLISH / EDIT COMMANDS
-# ==========================================
-
-if text.lower() == "انشر":
+    if text.lower() == "انشر":
 
         if LAST_ARTICLE is None:
 
             await update.message.reply_text(
-                "❌ لا يوجد مقال للنشر."
+                "❌ لا يوجد مقال."
             )
 
             return
-
-        await update.message.reply_text(
-            "🚀 جاري النشر على GitHub..."
-        )
 
         success = publish_article(
             LAST_ARTICLE
@@ -272,45 +258,96 @@ if text.lower() == "انشر":
 
         if success:
 
-            slug = LAST_ARTICLE["slug"]
-
             await update.message.reply_text(
-                "✅ تم نشر المقال بنجاح.\n\n"
-                f"📄 articles/{slug}.html"
+                "✅ تم النشر على GitHub."
             )
 
         else:
 
             await update.message.reply_text(
-                "❌ فشل النشر على GitHub."
+                "❌ فشل النشر."
             )
 
         return
-
-    # ==========================================
-
-    if text.lower() == "عدل":
+            if text.lower() == "عدل":
 
         if LAST_ARTICLE is None:
 
             await update.message.reply_text(
-                "❌ لا يوجد مقال لتعديله."
+                "❌ لا يوجد مقال."
             )
 
             return
 
         await update.message.reply_text(
-            "✏️ ميزة التعديل سيتم إضافتها قريبًا."
+            "✏️ ميزة التعديل قريباً."
         )
 
         return
 
-    # ==========================================
-
     await update.message.reply_text(
-        "❌ أرسل رقم موضوع أو اكتب (انشر)."
+        "❌ أرسل رقم موضوع."
     )
-    # ==========================================
+
+# ==========================================
+# BUTTONS
+# ==========================================
+
+async def button_handler(
+    update: Update,
+    context: ContextTypes.DEFAULT_TYPE
+):
+
+    global LAST_ARTICLE
+
+    query = update.callback_query
+
+    await query.answer()
+
+    if LAST_ARTICLE is None:
+
+        await query.edit_message_text(
+            "❌ لا يوجد مقال."
+        )
+
+        return
+
+    if query.data == "preview":
+
+        await query.message.reply_text(
+            LAST_ARTICLE["article"][:3500]
+        )
+
+        return
+
+    if query.data == "publish":
+
+        success = publish_article(
+            LAST_ARTICLE
+        )
+
+        if success:
+
+            await query.edit_message_text(
+                "✅ تم نشر المقال."
+            )
+
+        else:
+
+            await query.edit_message_text(
+                "❌ فشل النشر."
+            )
+
+        return
+
+    if query.data == "edit":
+
+        await query.edit_message_text(
+            "✏️ قريباً..."
+        )
+
+        return
+        # ==========================================
 # HANDLERS
 # ==========================================
 
@@ -325,6 +362,12 @@ application.add_handler(
     MessageHandler(
         filters.TEXT & ~filters.COMMAND,
         receive_message
+    )
+)
+
+application.add_handler(
+    CallbackQueryHandler(
+        button_handler
     )
 )
 
@@ -344,7 +387,45 @@ def main():
         allowed_updates=Update.ALL_TYPES,
         drop_pending_updates=True
     )
+    # ==========================================
+# HANDLERS
+# ==========================================
 
+application.add_handler(
+    CommandHandler(
+        "start",
+        start_command
+    )
+)
 
-if __name__ == "__main__":
+application.add_handler(
+    MessageHandler(
+        filters.TEXT & ~filters.COMMAND,
+        receive_message
+    )
+)
+
+application.add_handler(
+    CallbackQueryHandler(
+        button_handler
+    )
+)
+
+# ==========================================
+# MAIN
+# ==========================================
+
+def main():
+
+    application.post_init = post_init
+
+    print("=" * 50)
+    print("InfoVerse Hub Started")
+    print("=" * 50)
+
+    application.run_polling(
+        allowed_updates=Update.ALL_TYPES,
+        drop_pending_updates=True
+    )
+    if __name__ == "__main__":
     main()
