@@ -221,13 +221,31 @@ async def receive_message(
                 part
             )
 
-        await update.message.reply_text(
-            "━━━━━━━━━━━━━━━━━━\n\n"
-            "✅ انتهى إرسال المقال.\n\n"
-            "اكتب:\n"
-            "📤 انشر\n"
-            "✏️ عدل"
+        keyboard = InlineKeyboardMarkup([
+    [
+        InlineKeyboardButton(
+            "👀 معاينة المقال",
+            callback_data="preview_article"
         )
+    ],
+    [
+        InlineKeyboardButton(
+            "📝 نشر المقال",
+            callback_data="publish_article"
+        )
+    ],
+    [
+        InlineKeyboardButton(
+            "✏️ تعديل المقال",
+            callback_data="edit_article"
+        )
+    ]
+])
+
+await update.message.reply_text(
+    "✅ تم إنشاء المقال بنجاح.\n\nاختر ما تريد:",
+    reply_markup=keyboard
+)
 
         return
 # ==========================================
