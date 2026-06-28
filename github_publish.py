@@ -185,3 +185,8 @@ def publish_preview(article):
         "https://infoversehub.github.io/"
         "infoverse-hub/preview/"
     )
+# ==========================================
+# PREVIEW ARTICLE
+# ==========================================
+
+def publish_preview(article):
