@@ -184,22 +184,21 @@ def publish_article(article):
 # ==========================================
 
 def publish_preview(article):
-
     html = build_html(
         article
     )
-
-    success = upload_file(
-        path="preview/index.html",
-        content=html,
-        message="Update Preview"
+    slug = article.get(
+        "slug",
+        "preview"
     )
-
+    success = upload_file(
+        path=f"preview/{slug}.html",
+        content=html,
+        message=f"Preview: {article['title']}"
+    )
     if not success:
-
         return None
-
     return (
         "https://infoversehub.github.io/"
-"infoversetrends/preview/"
+        f"infoversetrends/preview/{slug}.html"
     )
