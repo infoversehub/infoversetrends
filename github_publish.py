@@ -82,10 +82,11 @@ def build_html(article):
         "{{LANGUAGE}}",
         "Arabic"
     )
+    
     hero_image = "https://placehold.co/1200x630?text=InfoVerse+Hub"
 
-if article.get("images"):
-    hero_image = article["images"][0]["url"]
+    if article.get("images"):
+        hero_image = article["images"][0]["url"]
 
    html = html.replace(
         "{{IMAGE}}",
