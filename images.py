@@ -89,12 +89,12 @@ def search_pexels(query, limit=MAX_IMAGES):
 
             if image:
 
-    images.append(
-        {
-            "url": image,
-            "alt": query
-        }
-    )
+                images.append(
+                    {
+                        "url": image,
+                        "alt": query
+                    }
+           )
 
                 
                     
