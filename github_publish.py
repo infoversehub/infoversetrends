@@ -88,10 +88,10 @@ def build_html(article):
     if article.get("images"):
         hero_image = article["images"][0]["url"]
 
-   html = html.replace(
+    html = html.replace(
         "{{IMAGE}}",
         hero_image
-  )
+    )
 
     html = html.replace(
         "{{KEYWORDS}}",
