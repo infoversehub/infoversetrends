@@ -1,0 +1,761 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+
+<head>
+
+<meta charset="UTF-8">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>{{TITLE}}</title>
+
+<meta name="description" content="{{DESCRIPTION}}">
+
+<link rel="canonical" href="{{CANONICAL}}">
+
+{{OPEN_GRAPH}}
+
+{{TWITTER_CARD}}
+
+{{SCHEMA}}
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+<style>
+
+*{
+margin:0;
+padding:0;
+box-sizing:border-box;
+}
+
+html{
+scroll-behavior:smooth;
+}
+
+body{
+
+font-family:'Cairo',sans-serif;
+
+background:#f4f6fb;
+
+color:#222;
+
+line-height:1.9;
+
+}
+
+a{
+
+text-decoration:none;
+
+color:inherit;
+
+}
+
+img{
+
+max-width:100%;
+
+display:block;
+
+}
+
+.container{
+
+max-width:760px;
+
+margin:auto;
+
+background:#fff;
+
+min-height:100vh;
+
+box-shadow:0 5px 30px rgba(0,0,0,.05);
+
+}
+
+.header{
+
+position:sticky;
+
+top:0;
+
+background:#fff;
+
+height:65px;
+
+display:flex;
+
+align-items:center;
+
+justify-content:space-between;
+
+padding:0 18px;
+
+border-bottom:1px solid #ececec;
+
+z-index:999;
+
+}
+
+.logo{
+
+font-size:23px;
+
+font-weight:800;
+
+color:#2563eb;
+
+}
+
+.menu{
+
+font-size:24px;
+
+cursor:pointer;
+
+}
+
+.content{
+
+padding:22px;
+
+}
+
+.breadcrumb{
+
+font-size:13px;
+
+color:#777;
+
+margin-bottom:18px;
+
+}
+
+.title{
+
+font-size:31px;
+
+font-weight:800;
+
+line-height:1.45;
+
+margin-bottom:12px;
+
+}
+
+.date{
+
+font-size:14px;
+
+color:#888;
+
+margin-bottom:22px;
+
+}
+
+.hero{
+
+border-radius:18px;
+
+overflow:hidden;
+
+margin-bottom:24px;
+
+}
+
+.hero img{
+
+width:100%;
+
+}
+
+.summary{
+
+background:#f8fafc;
+
+border:1px solid #e8edf4;
+
+padding:18px;
+
+border-radius:16px;
+
+margin-bottom:28px;
+
+}
+
+.summary h2{
+
+font-size:20px;
+
+margin-bottom:10px;
+
+}
+
+.summary p{
+
+font-size:16px;
+
+color:#444;
+
+}
+
+.toc{
+
+background:#fff;
+
+border:1px solid #e8edf4;
+
+border-radius:16px;
+
+padding:18px;
+
+margin-bottom:30px;
+
+}
+
+.toc h2{
+
+font-size:20px;
+
+margin-bottom:15px;
+
+}
+
+.toc ul{
+
+padding-right:18px;
+
+}
+
+.toc li{
+
+margin-bottom:10px;
+
+}
+
+.article{
+
+font-size:18px;
+
+}
+
+.article h2{
+
+font-size:27px;
+
+margin-top:40px;
+
+margin-bottom:16px;
+
+font-weight:700;
+
+}
+
+.article h3{
+
+font-size:22px;
+
+margin-top:28px;
+
+margin-bottom:14px;
+
+font-weight:700;
+
+}
+
+.article p{
+
+margin-bottom:18px;
+
+color:#333;
+
+}
+
+.article ul{
+
+padding-right:22px;
+
+margin-bottom:22px;
+
+}
+
+.article li{
+
+margin-bottom:10px;
+
+}
+
+.article img{
+
+width:100%;
+
+border-radius:16px;
+
+margin:28px 0;
+
+}
+
+.article table{
+
+width:100%;
+
+border-collapse:collapse;
+
+margin:30px 0;
+
+overflow:hidden;
+
+border-radius:12px;
+
+}
+
+.article th{
+
+background:#2563eb;
+
+color:#fff;
+
+padding:14px;
+
+}
+
+.article td{
+
+padding:14px;
+
+border:1px solid #ececec;
+
+}
+  .article tr:nth-child(even){
+
+background:#fafafa;
+
+}
+
+.comparison{
+
+margin:40px 0;
+
+padding:20px;
+
+border:1px solid #e7eaf0;
+
+border-radius:16px;
+
+background:#fff;
+
+}
+
+.comparison h2{
+
+font-size:24px;
+
+margin-bottom:18px;
+
+}
+
+.buying-tips{
+
+margin:40px 0;
+
+padding:20px;
+
+border-radius:16px;
+
+background:#eef6ff;
+
+border:1px solid #d6e7ff;
+
+}
+
+.buying-tips h2{
+
+font-size:24px;
+
+margin-bottom:16px;
+
+}
+
+.buying-tips ul{
+
+padding-right:22px;
+
+}
+
+.buying-tips li{
+
+margin-bottom:12px;
+
+}
+
+.faq{
+
+margin-top:45px;
+
+}
+
+.faq h2{
+
+font-size:24px;
+
+margin-bottom:20px;
+
+}
+
+.faq-item{
+
+border:1px solid #ececec;
+
+border-radius:14px;
+
+margin-bottom:14px;
+
+overflow:hidden;
+
+}
+
+.faq-question{
+
+background:#fafafa;
+
+padding:16px;
+
+font-weight:700;
+
+}
+
+.faq-answer{
+
+padding:16px;
+
+}
+
+.related{
+
+margin-top:50px;
+
+}
+
+.related h2{
+
+font-size:24px;
+
+margin-bottom:18px;
+
+}
+
+.related-grid{
+
+display:grid;
+
+grid-template-columns:1fr;
+
+gap:16px;
+
+}
+
+.related-card{
+
+display:flex;
+
+gap:14px;
+
+padding:12px;
+
+border:1px solid #ececec;
+
+border-radius:14px;
+
+background:#fff;
+
+transition:.25s;
+
+}
+
+.related-card:hover{
+
+box-shadow:0 8px 24px rgba(0,0,0,.08);
+
+}
+
+.related-card img{
+
+width:110px;
+
+height:80px;
+
+object-fit:cover;
+
+border-radius:12px;
+
+}
+
+.related-card h3{
+
+font-size:17px;
+
+margin-bottom:8px;
+
+}
+
+.related-card p{
+
+font-size:14px;
+
+color:#666;
+
+}
+
+.share{
+
+margin-top:40px;
+
+display:flex;
+
+justify-content:center;
+
+gap:12px;
+
+}
+
+.share a{
+
+width:46px;
+
+height:46px;
+
+display:flex;
+
+align-items:center;
+
+justify-content:center;
+
+border-radius:50%;
+
+background:#f5f5f5;
+
+font-size:20px;
+
+transition:.25s;
+
+}
+
+.share a:hover{
+
+background:#2563eb;
+
+color:#fff;
+
+}
+
+.footer{
+
+margin-top:60px;
+
+padding:28px;
+
+text-align:center;
+
+font-size:14px;
+
+color:#777;
+
+border-top:1px solid #ececec;
+
+}
+
+@media(max-width:768px){
+
+.container{
+
+max-width:100%;
+
+box-shadow:none;
+
+}
+
+.content{
+
+padding:18px;
+
+}
+
+.title{
+
+font-size:27px;
+
+}
+
+.article{
+
+font-size:17px;
+
+}
+
+.article h2{
+
+font-size:24px;
+
+}
+
+.article h3{
+
+font-size:20px;
+
+}
+
+.related-card{
+
+flex-direction:column;
+
+}
+
+.related-card img{
+
+width:100%;
+
+height:190px;
+
+}
+
+}
+
+</style>
+
+</head>
+
+<body>
+
+<div class="container">
+
+<header class="header">
+
+<div class="logo">
+
+InfoVerse
+
+</div>
+
+<div class="menu">
+
+☰
+
+</div>
+
+</header>
+
+<div class="content">
+  <div class="breadcrumb">
+
+الرئيسية › {{TITLE}}
+
+</div>
+
+<h1 class="title">
+
+{{TITLE}}
+
+</h1>
+
+<div class="date">
+
+📅 {{DATE}}
+
+</div>
+
+<div class="hero">
+
+<img
+src="{{FEATURED_IMAGE}}"
+alt="{{TITLE}}"
+loading="eager">
+
+</div>
+
+<div class="summary">
+
+<h2>
+
+ملخص المقال
+
+</h2>
+
+<p>
+
+{{SUMMARY}}
+
+</p>
+
+</div>
+
+<div class="toc">
+
+<h2>
+
+جدول المحتويات
+
+</h2>
+
+{{TOC}}
+
+</div>
+
+<article class="article">
+
+{{CONTENT}}
+
+</article>
+
+{{COMPARISON}}
+
+{{BUYING_TIPS}}
+
+{{FAQ}}
+
+<div class="share">
+
+<a href="#">𝕏</a>
+
+<a href="#">f</a>
+
+<a href="#">in</a>
+
+<a href="#">✉</a>
+
+</div>
+
+<div class="related">
+
+<h2>
+
+مقالات ذات صلة
+
+</h2>
+
+<div class="related-grid">
+
+{{RELATED_ARTICLES}}
+
+</div>
+
+</div>
+
+<footer class="footer">
+
+© {{YEAR}} InfoVerse Hub. All Rights Reserved.
+
+</footer>
+
+</div>
+
+</div>
+
+</body>
+
+</html>
