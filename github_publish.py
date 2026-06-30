@@ -1,205 +1,154 @@
-from datetime import datetime
-import time
+"""
+InfoVerse Hub V2
+GitHub Publisher
+"""
 
-from github import (
-    upload_file,
+import base64
+import requests
+
+from config import (
+    GITHUB_TOKEN,
+    GITHUB_REPOSITORY,
+    GITHUB_BRANCH,
 )
 
-# ==========================================
-# LOAD TEMPLATE
-# ==========================================
 
-def load_template():
+class GitHubPublisher:
 
-    with open(
-        "template.html",
-        "r",
-        encoding="utf-8"
-    ) as file:
+    def __init__(self):
 
-        return file.read()
-
-# ==========================================
-# BUILD HTML
-# ==========================================
-
-def build_html(article):
-
-    html = load_template()
-
-    html = html.replace(
-        "{{TITLE}}",
-        article["title"]
-    )
-
-    html = html.replace(
-        "{{DESCRIPTION}}",
-        article["meta_description"]
-    )
-
-    html = html.replace(
-        "{{CONTENT}}",
-        article["article"]
-    )
-
-    html = html.replace(
-        "{{CATEGORY}}",
-        article.get(
-            "category",
-            "General"
+        self.api = (
+            f"https://api.github.com/repos/"
+            f"{GITHUB_REPOSITORY}/contents"
         )
-    )
 
-    html = html.replace(
-        "{{DATE}}",
-        datetime.now().strftime(
-            "%Y-%m-%d"
+        self.headers = {
+            "Authorization": f"Bearer {GITHUB_TOKEN}",
+            "Accept": "application/vnd.github+json",
+        }
+            def upload_file(
+        self,
+        content,
+        path,
+        message="Publish Article",
+    ):
+        """
+        Upload file to GitHub.
+        """
+
+        url = f"{self.api}/{path}"
+
+        encoded = base64.b64encode(
+            content.encode("utf-8")
+        ).decode("utf-8")
+
+        data = {
+            "message": message,
+            "content": encoded,
+            "branch": GITHUB_BRANCH,
+        }
+
+        response = requests.put(
+            url,
+            headers=self.headers,
+            json=data,
+            timeout=60,
         )
-    )
 
-    html = html.replace(
-        "{{YEAR}}",
-        str(
-            datetime.now().year
-        )
-    )
+        if response.status_code not in (200, 201):
 
-    html = html.replace(
-        "{{AUTHOR}}",
-        "InfoVerse Hub"
-    )
-
-    html = html.replace(
-        "{{LANG}}",
-        "ar"
-    )
-
-    html = html.replace(
-        "{{DIR}}",
-        "rtl"
-    )
-
-    html = html.replace(
-        "{{LANGUAGE}}",
-        "Arabic"
-    )
-    
-    hero_image = "https://placehold.co/1200x630?text=InfoVerse+Hub"
-
-    if article.get("images"):
-        hero_image = article["images"][0]["url"]
-
-    html = html.replace(
-        "{{IMAGE}}",
-        hero_image
-    )
-
-    html = html.replace(
-        "{{KEYWORDS}}",
-        ", ".join(
-            article.get(
-                "keywords",
-                []
+            raise Exception(
+                response.text
             )
+
+        return response.json()
+
+
+    def publish_article(
+        self,
+        html,
+        slug,
+    ):
+        """
+        Publish article.
+        """
+
+        path = f"articles/{slug}/index.html"
+
+        return self.upload_file(
+            content=html,
+            path=path,
+            message=f"Publish {slug}",
         )
-    )
+            def publish_image(
+        self,
+        image_path,
+        slug,
+        image_name,
+    ):
+        """
+        Publish image.
+        """
 
-    html = html.replace(
-        "{{CANONICAL_URL}}",
-        article.get(
-            "url",
-            "#"
+        with open(
+            image_path,
+            "rb"
+        ) as file:
+
+            encoded = base64.b64encode(
+                file.read()
+            ).decode("utf-8")
+
+        path = f"articles/{slug}/images/{image_name}"
+
+        data = {
+            "message": f"Upload {image_name}",
+            "content": encoded,
+            "branch": GITHUB_BRANCH,
+        }
+
+        response = requests.put(
+            f"{self.api}/{path}",
+            headers=self.headers,
+            json=data,
+            timeout=60,
         )
-    )
 
-    html = html.replace(
-        "{{READING_TIME}}",
-        article.get(
-            "reading_time",
-            "5 min"
+        if response.status_code not in (200, 201):
+
+            raise Exception(
+                response.text
+            )
+
+        return response.json()
+
+
+    def publish(
+        self,
+        html,
+        slug,
+        images=None,
+    ):
+        """
+        Publish complete article.
+        """
+
+        self.publish_article(
+            html,
+            slug,
         )
-    )
 
-    html = html.replace(
-        "{{TOC}}",
-        article.get(
-            "toc",
-            ""
-        )
-    )
+        if images:
 
-    html = html.replace(
-        "{{FAQ}}",
-        article.get(
-            "faq",
-            ""
-        )
-    )
+            for image in images:
 
-    html = html.replace(
-        "{{RELATED_ARTICLES}}",
-        article.get(
-            "related_articles",
-            ""
-        )
-    )
+                self.publish_image(
+                    image_path=image["path"],
+                    slug=slug,
+                    image_name=image["path"].split("/")[-1],
+                )
 
-    images_html = ""
+        print("✅ Article Published Successfully")
 
-    for image in article.get("images", []):
-        images_html += f"""
-    <figure class="article-image">
-        <img src="{image['url']}"
-             alt="{image.get('alt', article['title'])}"
-             loading="lazy">
-    </figure>
-    """
 
-    html = html.replace(
-        "{{IMAGES}}",
-        images_html
-   )
-    
-    return html
-
-# ==========================================
-# PUBLISH ARTICLE
-# ==========================================
-
-def publish_article(article):
-
-    slug = article["slug"]
-
-    html = build_html(
-        article
-    )
-    success = upload_file(
-        path=f"articles/{slug}.html",
-        content=html,
-        message=f"Publish article: {article['title']}"
-      )
-    return success
-
-# ==========================================
-# PUBLISH PREVIEW
-# ==========================================
-
-def publish_preview(article):
-
-    html = build_html(article)
-
-    filename = f"preview-{int(time.time())}.html"
-
-    success = upload_file(
-        path=f"preview/{filename}",
-        content=html,
-        message=f"Preview: {article['title']}"
-    )
-
-    if not success:
-        return None
-
-    return (
-        f"https://infoversehub.github.io/"
-        f"infoversetrends/preview/{filename}"
-    )
+publisher = GitHubPublisher()
