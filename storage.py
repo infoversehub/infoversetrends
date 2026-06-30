@@ -1,46 +1,60 @@
+"""
+InfoVerse Hub V2
+Storage Manager
+"""
+
 import json
 import os
 
 
-def load_json(file_path, default=None):
+def load_json(filename, default=None):
     """
     Load JSON file.
-    If file doesn't exist, create it using default.
     """
 
     if default is None:
         default = {}
 
-    if not os.path.exists(file_path):
-        save_json(file_path, default)
+    if not os.path.exists(filename):
         return default
 
     try:
-        with open(file_path, "r", encoding="utf-8") as f:
-            return json.load(f)
+
+        with open(filename, "r", encoding="utf-8") as file:
+            return json.load(file)
+
     except Exception:
-        save_json(file_path, default)
+
         return default
 
 
-def save_json(file_path, data):
+def save_json(filename, data):
     """
-    Save data to JSON file.
+    Save JSON file.
     """
 
-    with open(file_path, "w", encoding="utf-8") as f:
+    with open(filename, "w", encoding="utf-8") as file:
+
         json.dump(
             data,
-            f,
+            file,
             ensure_ascii=False,
             indent=4
         )
 
 
-def file_exists(file_path):
-    return os.path.exists(file_path)
+def file_exists(filename):
+    """
+    Check if file exists.
+    """
+
+    return os.path.exists(filename)
 
 
-def delete_file(file_path):
-    if os.path.exists(file_path):
-        os.remove(file_path)
+def delete_file(filename):
+    """
+    Delete file.
+    """
+
+    if os.path.exists(filename):
+        os.remove(filename)
