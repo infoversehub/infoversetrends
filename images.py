@@ -1,4 +1,9 @@
-import random
+"""
+InfoVerse Hub V2
+Image Manager
+"""
+
+import os
 import requests
 
 from config import (
@@ -6,359 +11,138 @@ from config import (
     PIXABAY_API_KEY,
 )
 
-# ==========================================
-# CONFIG
-# ==========================================
 
-PEXELS_URL = (
-    "https://api.pexels.com/v1/search"
-)
+IMAGE_FOLDER = "images"
 
-PIXABAY_URL = (
-    "https://pixabay.com/api/"
-)
 
-OPENVERSE_URL = (
-    "https://api.openverse.org/v1/images/"
-)
+def ensure_folder():
 
-WIKIMEDIA_URL = (
-    "https://commons.wikimedia.org/w/api.php"
-)
+    os.makedirs(IMAGE_FOLDER, exist_ok=True)
 
-LOREM_PICSUM = (
-    "https://picsum.photos/1200/800"
-)
 
-HEADERS = {
-    "Authorization": PEXELS_API_KEY
-}
+def download_image(url, filename):
 
-TIMEOUT = 20
+    ensure_folder()
 
-MAX_IMAGES = 5
+    path = os.path.join(IMAGE_FOLDER, filename)
 
+    response = requests.get(url, timeout=30)
 
-# ==========================================
-# SEARCH PEXELS
-# ==========================================
+    if response.status_code != 200:
+        return None
 
-def search_pexels(query, limit=MAX_IMAGES):
+    with open(path, "wb") as file:
+        file.write(response.content)
 
-    try:
+    return path
 
-        response = requests.get(
-            PEXELS_URL,
-            headers=HEADERS,
-            params={
-                "query": query,
-                "per_page": limit
-            },
-            timeout=TIMEOUT
-        )
 
-        if response.status_code != 200:
-            return []
+def search_pexels(query):
 
-        data = response.json()
+    if not PEXELS_API_KEY:
+        return None
 
-        images = []
+    headers = {
+        "Authorization": PEXELS_API_KEY
+    }
 
-        for photo in data.get(
-            "photos",
-            []
-        ):
+    url = (
+        "https://api.pexels.com/v1/search"
+        f"?query={query}&per_page=5"
+    )
 
-            src = photo.get(
-                "src",
-                {}
-            )
+    response = requests.get(
+        url,
+        headers=headers,
+        timeout=30
+    )
 
-            image = src.get(
-                "large2x"
-            )
+    if response.status_code != 200:
+        return None
 
-            if image:
+    data = response.json()
 
-                images.append(
-                    {
-                        "url": image,
-                        "alt": query
-                    }
-                )
+    photos = data.get("photos", [])
 
-        return images
+    if not photos:
+        return None
 
-    except Exception as e:
+    return photos[0]["src"]["large"]
 
-        print(
-            "Pexels Error:",
-            e
-        )
 
-        return []
-        # ==========================================
-# SEARCH PIXABAY
-# ==========================================
+def search_pixabay(query):
 
-def search_pixabay(query, limit=MAX_IMAGES):
+    if not PIXABAY_API_KEY:
+        return None
 
-    try:
+    url = (
+        "https://pixabay.com/api/"
+        f"?key={PIXABAY_API_KEY}"
+        f"&q={query}"
+        "&image_type=photo"
+        "&per_page=5"
+    )
 
-        response = requests.get(
-            PIXABAY_URL,
-            params={
-                "key": PIXABAY_API_KEY,
-                "q": query,
-                "image_type": "photo",
-                "safesearch": "true",
-                "per_page": limit
-            },
-            timeout=TIMEOUT
-        )
+    response = requests.get(url, timeout=30)
 
-        if response.status_code != 200:
-            return []
+    if response.status_code != 200:
+        return None
 
-        data = response.json()
+    data = response.json()
 
-        images = []
+    hits = data.get("hits", [])
 
-        for photo in data.get(
-            "hits",
-            []
-        ):
-
-            image = photo.get(
-                "largeImageURL"
-            )
+    if not hits:
+        return None
 
-            if image:
+    return hits[0]["largeImageURL"]
 
-                images.append(
-                    {
-                        "url": image,
-                        "alt": query
-                    }
-                )
-
-        return images
-
-    except Exception as e:
 
-        print(
-            "Pixabay Error:",
-            e
-        )
+def search_image(query):
 
-        return []
+    image = search_pexels(query)
 
+    if image:
+        return image
 
-# ==========================================
-# SEARCH OPENVERSE
-# ==========================================
+    image = search_pixabay(query)
 
-def search_openverse(query, limit=MAX_IMAGES):
+    if image:
+        return image
 
-    try:
+    return None
 
-        response = requests.get(
-            OPENVERSE_URL,
-            params={
-                "q": query,
-                "page_size": limit
-            },
-            timeout=TIMEOUT
-        )
 
-        if response.status_code != 200:
-            return []
+def get_featured_image(title):
 
-        data = response.json()
+    image = search_image(title)
 
-        images = []
+    if not image:
+        return None
 
-        for photo in data.get(
-            "results",
-            []
-        ):
+    return download_image(
+        image,
+        "featured.jpg"
+    )
 
-            image = photo.get(
-                "url"
-            )
 
-            if image:
-
-                images.append(
-                    {
-                        "url": image,
-                        "alt": query
-                    }
-                )
-
-        return images
-
-    except Exception as e:
-
-        print(
-            "Openverse Error:",
-            e
-        )
-
-        return []
-        # ==========================================
-# SEARCH WIKIMEDIA
-# ==========================================
-
-def search_wikimedia(query, limit=MAX_IMAGES):
-
-    try:
-
-        response = requests.get(
-            WIKIMEDIA_URL,
-            params={
-                "action": "query",
-                "generator": "search",
-                "gsrsearch": query,
-                "gsrnamespace": 6,
-                "gsrlimit": limit,
-                "prop": "imageinfo",
-                "iiprop": "url",
-                "format": "json"
-            },
-            timeout=TIMEOUT
-        )
-
-        if response.status_code != 200:
-            return []
-
-        data = response.json()
-
-        pages = data.get(
-            "query",
-            {}
-        ).get(
-            "pages",
-            {}
-        )
-
-        images = []
-
-        for page in pages.values():
-
-            info = page.get(
-                "imageinfo",
-                []
-            )
-
-            if not info:
-                continue
-
-            image = info[0].get(
-                "url"
-            )
-
-            if image:
-
-                images.append(
-                    {
-                        "url": image,
-                        "alt": query
-                    }
-                )
-
-        return images
-
-    except Exception as e:
-
-        print(
-            "Wikimedia Error:",
-            e
-        )
-
-        return []
-
-
-# ==========================================
-# SEARCH LOREM PICSUM
-# ==========================================
-
-def search_picsum(limit=MAX_IMAGES):
+def get_article_images(title, count=3):
 
     images = []
 
-    for _ in range(limit):
+    for i in range(count):
 
-        seed = random.randint(
-            1,
-            1000000
+        image = search_image(title)
+
+        if not image:
+            continue
+
+        path = download_image(
+            image,
+            f"image_{i+1}.jpg"
         )
 
-        images.append(
-            {
-                "url": f"https://picsum.photos/seed/{seed}/1200/800",
-                "alt": "Random Image"
-            }
-        )
-
-    return images
-
-
-# ==========================================
-# GET IMAGES
-# ==========================================
-
-def get_images(
-    keywords,
-    limit=MAX_IMAGES
-):
-
-    if isinstance(
-        keywords,
-        str
-    ):
-        keywords = [keywords]
-
-    images = []
-
-    for keyword in keywords:
-
-        results = search_pexels(
-            keyword,
-            limit
-        )
-
-        if not results:
-            results = search_pixabay(
-                keyword,
-                limit
-            )
-
-        if not results:
-            results = search_openverse(
-                keyword,
-                limit
-            )
-
-        if not results:
-            results = search_wikimedia(
-                keyword,
-                limit
-            )
-
-        if not results:
-            results = search_picsum(
-                limit
-            )
-
-        for image in results:
-
-            if image not in images:
-                images.append(
-                    image
-                )
-
-            if len(images) >= limit:
-                return images
+        if path:
+            images.append(path)
 
     return images
